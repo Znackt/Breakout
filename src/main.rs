@@ -140,6 +140,9 @@ fn resolve_collision(a: &mut Rect, vel: &mut Vec2, b: &mut Rect) -> bool {
 }
 #[macroquad::main("BreakOut")]
 async fn main() {
+    let font = load_ttf_font("res/Heebo-Light.ttf").await.unwrap();
+    let mut score = 0;
+
     let mut player = Player::new();
     let mut blocks = Vec::new();
     let mut balls = Vec::new();
@@ -182,7 +185,10 @@ async fn main() {
             for block in blocks.iter_mut() {
                 if resolve_collision(&mut ball.rect, &mut ball.vel, &mut block.rect) {
                     block.lives -= 1;
-                }
+                    if block.lives <= 0 {
+                        score += 10;
+                    };
+                };
             }
         }
 
@@ -196,6 +202,23 @@ async fn main() {
         for ball in balls.iter() {
             ball.draw();
         }
+
+        let score_text = format!("score: {}", score);
+        let score_text_dim: TextDimensions = measure_text(&score_text, Some(&font), 30u16, 1.0);
+        draw_text_ex(
+            &score_text,
+            (screen_width() * 0.5f32)
+                - (score_text_dim.height * 0.5f32)
+                - score_text_dim.width * 0.5f32,
+            40.0,
+            TextParams {
+                font: Some(&font),
+                font_size: 30u16,
+                color: BLACK,
+                ..Default::default()
+            },
+        );
+
 
         next_frame().await;
     }
