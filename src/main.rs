@@ -87,7 +87,7 @@ impl Ball {
             self.vel.x = 1f32;
         };
 
-        if self.rect.y > screen_width() - self.rect.w {
+        if self.rect.x > screen_width() - self.rect.w {
             self.vel.x = -1f32;
         };
 
@@ -142,6 +142,7 @@ fn resolve_collision(a: &mut Rect, vel: &mut Vec2, b: &mut Rect) -> bool {
 async fn main() {
     let font = load_ttf_font("res/Heebo-Light.ttf").await.unwrap();
     let mut score = 0;
+    let mut player_lives = 3;
 
     let mut player = Player::new();
     let mut blocks = Vec::new();
@@ -192,6 +193,24 @@ async fn main() {
             }
         }
 
+        let balls_len_before = balls.len();
+
+        // 1. Correctly filter the BALLS vector
+        balls.retain(|ball| ball.rect.y < screen_height());
+
+        let balls_len_after = balls.len();
+        let removed_balls = balls_len_before - balls_len_after;
+
+        // 2. Decrease life if the last ball was lost
+        if removed_balls > 0 && balls_len_after == 0 {
+            player_lives -= 1;
+
+            // Optional: Respawn a ball so the game can continue
+            if player_lives > 0 {
+                balls.push(Ball::new(vec2(screen_width() * 0.5, screen_height() * 0.5)));
+            }
+        }
+
         blocks.retain(|block| block.lives > 0);
 
         clear_background(WHITE);
@@ -219,7 +238,18 @@ async fn main() {
             },
         );
 
-
+        draw_text_ex(
+            &format!("lives: {}", player_lives),
+            30.0,
+            40.0,
+            TextParams {
+                font: Some(&font),
+                font_size: 30u16,
+                font_scale: 1.0,
+                color: BLACK,
+                ..Default::default()
+            },
+        );
         next_frame().await;
     }
 }
